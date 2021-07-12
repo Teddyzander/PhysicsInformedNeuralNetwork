@@ -16,7 +16,7 @@ u0 = 1  # create an initial condition
 eps = np.sqrt(np.finfo(np.float32).eps)
 
 # define the learning parameters
-rate = 0.01  # when we find the direction of descent, how far will we go in one step
+rate = 0.001  # when we find the direction of descent, how far will we go in one step
 steps = 5000  # how many training steps to complete
 batch_size = 100  # how many training points to use each training cycle
 display_step = steps / 10  # how often to display training step
