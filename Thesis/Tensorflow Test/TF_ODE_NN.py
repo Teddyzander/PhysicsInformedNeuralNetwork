@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.pyplot import figure
 import math
+from scipy.misc import derivative
 
 
 # define the parameters and functions of the ODE
@@ -16,11 +17,11 @@ u0 = 1  # create an initial condition
 eps = np.sqrt(np.finfo(np.float32).eps)
 
 # define the learning parameters
-rate = 0.001  # when we find the direction of descent, how far will we go in one step
-steps = 5000  # how many training steps to complete
-batch_size = 100  # how many training points to use each training cycle
+rate = 0.01  # when we find the direction of descent, how far will we go in one step
+steps = 1000  # how many training steps to complete
+batch_size = 500  # how many training points to use each training cycle
 display_step = steps / 10  # how often to display training step
-points = 50  # number of training points from the ODE used
+points = 100  # number of training points from the ODE used
 
 # define the layout of the network
 nn_input = 1  # number of neurons for the input layer
@@ -32,7 +33,7 @@ nn_output = 1  # number of neurons in the output layer
 weights = {
     'h1': tf.Variable(tf.random.normal([nn_input, nn_hidden_1])),
     'h2': tf.Variable(tf.random.normal([nn_hidden_1, nn_hidden_2])),
-    'out': tf.Variable(tf.random.normal([nn_hidden_2, nn_output]))
+    'out': tf.Variable(tf.random.normal([nn_hidden_1, nn_output]))
 }
 biases = {
     'b1': tf.Variable(tf.random.normal([nn_hidden_1])),
@@ -54,7 +55,7 @@ def nn(t):
     layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
     layer_2 = tf.nn.tanh(layer_2)
     # Output fully connected layer
-    output = tf.matmul(layer_2, weights['out']) + biases['out']
+    output = tf.matmul(layer_1, weights['out']) + biases['out']
     return output
 
 
@@ -94,18 +95,30 @@ figure(figsize=(10, 10))
 
 # True Solution
 def true_solution(x):
-    return 1 + np.sin(2 * np.pi * x)/(2 * np.pi)
+    return 1 + np.sin(2 * np.pi * x) / (2 * np.pi)
 
 
 X = np.linspace(0, 1, points * 10)
 result = []
+result_prime = []
 S = true_solution(X)
 for i in X:
-  result.append(g(i).numpy()[0][0][0])
+    with tf.GradientTape() as tape:
+        prediction = g(i).numpy()[0][0][0]
 
+    result.append(prediction)
+
+dg = np.gradient(np.array(result), 1/(points * 10))
+df = np.gradient(S, 1/(points * 10))
+dgg = np.gradient(dg, 1/(points * 10))
+dff = np.gradient(df, 1/(points * 10))
 plt.plot(X, S, label="Original Function u(t)")
 plt.plot(X, result, label="Neural Net Approximation g(t)")
+plt.plot(X, dg, label="first derivative approx of g(t)")
+plt.plot(X, df, label="first derivative original function")
+plt.plot(X, dgg, label="second derivative approx of g(t)")
+plt.plot(X, dff, label="second derivative original function")
 plt.legend(loc=1, prop={'size': 15})
-plt.xlabel("input t")
+plt.xlabel("input x")
 plt.ylabel("output")
 plt.show()
